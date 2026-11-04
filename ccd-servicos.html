@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CCD-Servicos</title>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDFm9ziriN944NvTUfngInc966xwEXVo-o",
+    authDomain: "ccd-servicos-e708e.firebaseapp.com",
+    projectId: "ccd-servicos-e708e",
+    storageBucket: "ccd-servicos-e708e.firebasestorage.app",
+    messagingSenderId: "588435550330",
+    appId: "1:588435550330:web:51edbc4d413e7f7658dbc3"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window._db = db;
+  window._firebase = { collection, addDoc, getDocs, query, where, doc, updateDoc };
+  window._dbPronto = true;
+  document.dispatchEvent(new Event('firebase-pronto'));
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{--verde:#2ecc71;--vd:#1a8a4a;--az:#1a6fa8;--bg:#f0f8f0;--cinza:#888;--texto:#1a2a1a;--borda:#d0e8d0;--sombra:0 4px 20px rgba(46,204,113,.15)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh}
+
+/* WELCOME */
+#welcome-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#1a8a4a,#1a6fa8);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;text-align:center;padding:30px;transition:opacity .8s}
+#welcome-overlay.ocultar{opacity:0;pointer-events:none}
+.logo-grande{width:110px;height:110px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:24px;box-shadow:0 0 40px rgba(255,255,255,.3);animation:pulse 1.5s ease infinite}
+.logo-grande svg{width:70px;height:70px}
+#welcome-overlay h1{color:#fff;font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:10px}
+#welcome-overlay p{color:rgba(255,255,255,.85);font-size:1rem}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+
+/* HEADER */
+header{background:linear-gradient(135deg,var(--vd),var(--az));color:#fff;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.logo-header{display:flex;align-items:center;gap:10px}
+.logo-circle{width:42px;height:42px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-circle svg{width:28px;height:28px}
+.logo-text .nome{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800}
+.logo-text .sub{font-size:.7rem;opacity:.85}
+.btn-header{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:6px 14px;font-size:.8rem;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-header:hover{background:rgba(255,255,255,.3)}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--vd),var(--az));color:#fff;padding:28px 16px 24px;text-align:center}
+.hero h2{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:6px}
+.hero p{font-size:.88rem;opacity:.9;margin-bottom:16px}
+.hero-stats{display:flex;justify-content:center;gap:24px}
+.stat{text-align:center}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800;color:var(--verde)}
+.stat-label{font-size:.72rem;opacity:.8}
+
+main{padding:16px}
+.section-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+
+/* CURSOS */
+.cursos-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.curso-card{background:#fff;border-radius:16px;overflow:hidden;border:1.5px solid var(--borda);box-shadow:var(--sombra);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.curso-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(46,204,113,.25)}
+.curso-thumb{height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;position:relative}
+.curso-thumb.windows{background:linear-gradient(135deg,#0078d4,#00bcf2)}
+.curso-thumb.ppt{background:linear-gradient(135deg,#d24726,#ff8c42)}
+.curso-thumb.word{background:linear-gradient(135deg,#2b579a,#41a5ee)}
+.curso-thumb.excel{background:linear-gradient(135deg,#217346,#33c481)}
+.preco-badge{position:absolute;top:8px;right:8px;background:#fff;color:var(--vd);font-size:.72rem;font-weight:800;padding:3px 7px;border-radius:20px;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.locked-badge{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.5);color:#fff;font-size:.65rem;padding:3px 7px;border-radius:20px}
+.curso-info{padding:10px 12px 12px}
+.curso-nome{font-family:'Syne',sans-serif;font-weight:700;font-size:.88rem;margin-bottom:2px}
+.curso-desc{font-size:.75rem;color:var(--cinza);margin-bottom:8px;line-height:1.3}
+.btn-aceder{width:100%;border:none;border-radius:8px;padding:7px;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-aceder.bloqueado{background:linear-gradient(135deg,var(--verde),var(--az));color:#fff}
+.btn-aceder:hover{opacity:.85}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:flex-end;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px 32px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 20px}
+
+.preview-aula{background:linear-gradient(135deg,#e8f8f0,#e8f0f8);border-radius:16px;padding:16px;margin-bottom:16px;border:1.5px solid var(--borda)}
+.preview-aula-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.preview-emoji{font-size:2.2rem}
+.preview-titulo{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800}
+.preview-subtitulo{font-size:.78rem;color:var(--cinza);margin-top:2px}
+.preview-topicos h5{font-size:.8rem;font-weight:700;color:var(--vd);margin-bottom:8px}
+.topico-item{display:flex;align-items:flex-start;gap:8px;font-size:.8rem;margin-bottom:6px;background:#fff;border-radius:8px;padding:8px 10px;border:1px solid var(--borda)}
+.blur-teaser{background:#fff;border-radius:8px;padding:10px;text-align:center;margin-top:8px;border:1.5px dashed var(--verde)}
+.blur-teaser p{font-size:.78rem;color:var(--vd);font-weight:600}
+.pagar-agora-banner{background:linear-gradient(135deg,var(--vd),var(--az));color:#fff;border-radius:12px;padding:12px 14px;margin-bottom:16px;text-align:center}
+.pagar-agora-banner .preco-grande{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:900}
+.pagar-agora-banner p{font-size:.8rem;opacity:.9;margin-top:2px}
+.pagamento-instrucoes{background:#fffbe8;border-radius:12px;padding:14px;margin-bottom:16px;border:1.5px solid #f0d060}
+.pagamento-instrucoes h4{font-size:.88rem;font-weight:700;margin-bottom:12px;color:#7a5800}
+.metodo-pag{background:#fff;border-radius:10px;padding:12px 14px;margin-bottom:10px;border:1.5px solid #f0d060}
+.metodo-nome{font-weight:700;font-size:.9rem}
+.metodo-numero-destaque{background:var(--vd);color:#fff;font-size:1rem;font-weight:800;font-family:'Syne',sans-serif;padding:6px 12px;border-radius:8px;letter-spacing:1px;display:block;text-align:center;margin:6px 0}
+.metodo-passos{font-size:.78rem;color:#555;line-height:1.8}
+.metodo-passos b{color:var(--texto)}
+.ja-paguei-link{text-align:center;margin-bottom:14px;font-size:.82rem;color:var(--az);cursor:pointer;text-decoration:underline;font-weight:600}
+.form-group{margin-bottom:12px}
+.form-group label{display:block;font-size:.78rem;font-weight:700;color:var(--cinza);margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+.form-group input{width:100%;border:1.5px solid var(--borda);border-radius:10px;padding:11px 13px;font-size:.95rem;font-family:inherit;outline:none;background:var(--bg)}
+.form-group input:focus{border-color:var(--verde)}
+.pin-wrapper{position:relative}
+.pin-wrapper input{padding-right:44px;letter-spacing:4px;font-weight:700;font-size:1.1rem}
+.pin-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem}
+.pin-hint{font-size:.75rem;color:var(--cinza);margin-top:4px;line-height:1.4}
+.aviso-validacao{background:#fff3e0;border:1.5px solid #ffb74d;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.8rem;color:#e65100;display:none}
+.aviso-validacao.visivel{display:block}
+.btn-confirmar{width:100%;background:linear-gradient(135deg,var(--vd),var(--az));color:#fff;border:none;border-radius:12px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px}
+.btn-cancelar{width:100%;background:#f0f0f0;color:#666;border:none;border-radius:12px;padding:12px;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit}
+.success-msg{display:none;background:#e8f8e8;border:1.5px solid #a5d6a7;border-radius:12px;padding:20px;text-align:center;margin-bottom:12px}
+.success-msg.active{display:block}
+.success-msg .icon,.pendente-msg .icon{font-size:2.5rem;margin-bottom:8px}
+.success-msg p{font-size:.88rem;color:var(--vd);font-weight:600}
+.pendente-msg{display:none;background:#fff8e8;border:1.5px solid #f0c060;border-radius:12px;padding:20px;text-align:center;margin-bottom:12px}
+.pendente-msg.active{display:block}
+.pendente-msg p{font-size:.88rem;color:#7a5800;font-weight:600}
+
+/* VIDEO */
+.video-container{background:#000;border-radius:12px;overflow:hidden;margin-bottom:14px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;color:#fff}
+.video-container iframe{width:100%;height:100%;border:none}
+.video-placeholder{text-align:center;padding:30px}
+.video-placeholder .play-icon{font-size:3rem;margin-bottom:10px}
+
+/* ADMIN */
+#view-admin{display:none}
+#view-admin.active{display:block}
+#admin-panel{padding:14px}
+.admin-header{background:linear-gradient(135deg,#1a2a1a,#1a1a2a);color:#fff;border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px}
+.admin-avatar{width:42px;height:48px;background:var(--verde);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.admin-info .nome{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem}
+.admin-info .cargo{font-size:.78rem;color:var(--verde)}
+.admin-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.admin-stat-card{background:#fff;border-radius:12px;padding:14px;border:1.5px solid var(--borda);text-align:center}
+.admin-stat-num{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;color:var(--vd)}
+.admin-stat-label{font-size:.72rem;color:var(--cinza)}
+.tabs{display:flex;background:#fff;border-radius:12px;padding:4px;margin-bottom:16px;border:1.5px solid var(--borda);gap:2px}
+.tab{flex:1;padding:7px 2px;border:none;background:none;border-radius:8px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--cinza);transition:all .2s}
+.tab.active{background:var(--vd);color:#fff}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.admin-section-title{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.admin-card{background:#fff;border-radius:14px;border:1.5px solid var(--borda);padding:16px;margin-bottom:12px}
+.pagamento-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:.85rem}
+.pagamento-item:last-child{border-bottom:none}
+.pag-info .pag-nome{font-weight:600}
+.pag-info .pag-curso,.pag-info .pag-ref{color:var(--cinza);font-size:.75rem}
+.pag-status{padding:3px 8px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap}
+.pag-status.aprovado{background:#e8f8e8;color:var(--vd)}
+.pag-status.pendente{background:#fff8e8;color:#e67e22}
+.pag-status.rejeitado{background:#ffe8e8;color:#c0392b}
+.pag-acoes{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.btn-admin{border:none;border-radius:6px;padding:5px 10px;font-size:.72rem;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+.btn-aprovar{background:#e8f8e8;color:var(--vd)}
+.btn-rejeitar{background:#ffe8e8;color:#c0392b}
+.btn-editar{background:#e8f0ff;color:var(--az)}
+.loading-admin{text-align:center;padding:20px;color:var(--cinza);font-size:.85rem}
+
+/* CURSO ADMIN */
+.curso-admin-item{padding:12px 0;border-bottom:1px solid #eee}
+.curso-admin-item:last-child{border-bottom:none}
+.curso-admin-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.curso-admin-left{display:flex;align-items:center;gap:10px}
+.curso-admin-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+.curso-admin-nome{font-weight:600;font-size:.88rem}
+.curso-admin-preco{font-size:.78rem;color:var(--cinza)}
+.curso-edit-area{background:var(--bg);border-radius:10px;padding:10px;display:none}
+.curso-edit-area.aberto{display:block}
+.edit-row{display:flex;gap:6px;margin-bottom:8px}
+.edit-input{flex:1;border:1.5px solid var(--borda);border-radius:8px;padding:8px 10px;font-size:.85rem;font-family:inherit;outline:none;background:#fff}
+.edit-input:focus{border-color:var(--verde)}
+.btn-salvar-edit{background:var(--vd);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.8rem;white-space:nowrap}
+.video-actual{font-size:.75rem;color:var(--az);margin-top:4px;word-break:break-all}
+
+/* CONFIG */
+.config-row{margin-bottom:14px}
+.config-label{font-size:.78rem;font-weight:700;color:var(--cinza);margin-bottom:6px;display:block}
+.config-input-row{display:flex;gap:6px}
+.config-input{flex:1;border:1.5px solid var(--borda);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:.9rem;background:var(--bg);outline:none}
+.config-input:focus{border-color:var(--verde)}
+.btn-salvar-config{background:var(--verde);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer;font-family:inherit;font-size:.82rem;white-space:nowrap}
+.saved-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--vd);color:#fff;padding:10px 20px;border-radius:20px;font-size:.85rem;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.saved-toast.show{opacity:1}
+
+/* LOGIN */
+#login-admin{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;align-items:center;justify-content:center;padding:20px}
+#login-admin.active{display:flex}
+.login-card{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:340px;text-align:center}
+.login-card h3{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:4px}
+.login-card p{font-size:.85rem;color:var(--cinza);margin-bottom:20px}
+.login-card input{width:100%;border:1.5px solid var(--borda);border-radius:10px;padding:12px;font-size:.95rem;font-family:inherit;margin-bottom:10px;outline:none;background:var(--bg);text-align:center;letter-spacing:4px;font-weight:700}
+.login-card input:focus{border-color:var(--verde)}
+.btn-login{width:100%;background:linear-gradient(135deg,var(--vd),var(--az));color:#fff;border:none;border-radius:10px;padding:12px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:8px}
+.btn-cancelar-login{background:none;border:none;color:var(--cinza);cursor:pointer;font-family:inherit;font-size:.85rem}
+
+footer{background:linear-gradient(135deg,var(--vd),var(--az));color:rgba(255,255,255,.8);text-align:center;padding:16px;font-size:.78rem;margin-top:20px}
+footer b{color:#fff}
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<div id="welcome-overlay">
+  <div class="logo-grande">
+    <svg viewBox="0 0 70 70" fill="none">
+      <rect x="8" y="14" width="54" height="34" rx="4" fill="#1a8a4a"/>
+      <rect x="12" y="18" width="46" height="26" rx="2" fill="#e8f8f0"/>
+      <rect x="16" y="22" width="18" height="3" rx="1.5" fill="#1a8a4a"/>
+      <rect x="16" y="28" width="14" height="3" rx="1.5" fill="#1a6fa8"/>
+      <rect x="16" y="34" width="20" height="3" rx="1.5" fill="#1a8a4a"/>
+      <rect x="24" y="48" width="22" height="4" rx="2" fill="#1a8a4a"/>
+      <rect x="18" y="52" width="34" height="4" rx="2" fill="#1a6fa8"/>
+      <circle cx="50" cy="30" r="7" fill="#2ecc71"/>
+      <path d="M47 30l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>CCD Serviços</h1>
+  <p>Aulas de Informática · Beira, Moçambique</p>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-header">
+    <div class="logo-circle">
+      <svg viewBox="0 0 28 28" fill="none">
+        <rect x="3" y="5" width="22" height="14" rx="2" fill="#1a8a4a"/>
+        <rect x="5" y="7" width="18" height="10" rx="1" fill="#e8f8f0"/>
+        <rect x="10" y="19" width="8" height="2" rx="1" fill="#1a8a4a"/>
+        <rect x="7" y="21" width="14" height="2" rx="1" fill="#1a6fa8"/>
+        <circle cx="20" cy="12" r="3" fill="#2ecc71"/>
+        <path d="M19 12l.8.8 1.6-1.6" stroke="white" stroke-width=".8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <div class="nome">CCD Serviços</div>
+      <div class="sub">Aulas de Informática</div>
+    </div>
+  </div>
+  <div>
+    <button class="btn-header" id="btn-admin-toggle" onclick="abrirLoginAdmin()">⚙ Admin</button>
+  </div>
+</header>
+
+<!-- VIEW CLIENTE -->
+<div id="view-cliente">
+  <div class="hero">
+    <h2>Aprende Informática</h2>
+    <p>Cursos práticos para o teu futuro profissional</p>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">4</div><div class="stat-label">Cursos</div></div>
+      <div class="stat"><div class="stat-num" id="stat-alunos">0</div><div class="stat-label">Alunos</div></div>
+      <div class="stat"><div class="stat-num">🏆</div><div class="stat-label">Certificados</div></div>
+    </div>
+  </div>
+  <main>
+    <p class="section-title">📚 Os Nossos Cursos</p>
+    <div class="cursos-grid" id="cursos-grid"></div>
+  </main>
+</div>
+
+<!-- VIEW ADMIN -->
+<div id="view-admin">
+  <div id="admin-panel">
+    <!-- Preenchido por JS -->
+  </div>
+</div>
+
+<!-- MODAL PAGAMENTO -->
+<div class="modal-overlay" id="modal-preview">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="success-msg" id="success-msg"><div class="icon">✅</div><p id="success-txt">Confirmação enviada!</p></div>
+    <div class="pendente-msg" id="pendente-msg"><div class="icon">⏳</div><p id="pendente-txt">Aguarda aprovação.</p></div>
+    <div id="modal-conteudo">
+      <div class="preview-aula">
+        <div class="preview-aula-header">
+          <div class="preview-emoji" id="preview-emoji">💻</div>
+          <div>
+            <div class="preview-titulo" id="preview-titulo">Curso</div>
+            <div class="preview-subtitulo" id="preview-subtitulo">Nível: Básico</div>
+          </div>
+        </div>
+        <div class="preview-topicos">
+          <h5>📋 O que vais aprender:</h5>
+          <div id="topicos-lista"></div>
+          <div class="blur-teaser"><p>🔒 Paga para desbloquear todo o conteúdo</p></div>
+        </div>
+      </div>
+      <div class="pagar-agora-banner">
+        <div class="preco-grande" id="preco-display">2.500 MT</div>
+        <p>Acesso completo ao curso</p>
+      </div>
+
+      <!-- MODO PAGAR -->
+      <div id="modo-pagar">
+        <div class="pagamento-instrucoes">
+          <h4>💳 Como pagar:</h4>
+          <div class="metodo-pag">
+            <span class="metodo-nome">📱 E-Mola</span>
+            <span class="metodo-numero-destaque" id="num-emola-display">877 567 229</span>
+            <div class="metodo-passos"><b>1.</b> Abre o E-Mola &nbsp;<b>2.</b> Enviar Dinheiro<br><b>3.</b> Insere o número acima &nbsp;<b>4.</b> Valor do curso<br><b>5.</b> Guarda a referência</div>
+          </div>
+          <div class="metodo-pag">
+            <span class="metodo-nome">📱 M-Pesa</span>
+            <span class="metodo-numero-destaque" id="num-mpesa-display">877 567 229</span>
+            <div class="metodo-passos"><b>1.</b> Abre o M-Pesa &nbsp;<b>2.</b> Pagamentos/Enviar<br><b>3.</b> Insere o número acima &nbsp;<b>4.</b> Valor do curso<br><b>5.</b> Guarda a referência</div>
+          </div>
+          <div class="metodo-pag">
+            <span class="metodo-nome">📱 Mkesh</span>
+            <span class="metodo-numero-destaque" id="num-mkesh-display">877 567 229</span>
+            <div class="metodo-passos"><b>1.</b> Abre o Mkesh &nbsp;<b>2.</b> Transferir<br><b>3.</b> Insere o número acima &nbsp;<b>4.</b> Valor do curso<br><b>5.</b> Guarda a referência</div>
+          </div>
+        </div>
+        <div class="aviso-validacao" id="aviso-pagar"></div>
+        <div class="form-group"><label>Nome completo</label><input type="text" id="inp-nome" placeholder="Ex: João Manuel Silva"></div>
+        <div class="form-group"><label>Número de telefone</label><input type="tel" id="inp-tel" placeholder="87XXXXXXX"></div>
+        <div class="form-group"><label>Referência do pagamento</label><input type="text" id="inp-ref" placeholder="Número de transacção"></div>
+        <div class="form-group">
+          <label>Cria o teu PIN de acesso</label>
+          <div class="pin-wrapper">
+            <input type="password" id="inp-pin" maxlength="6" placeholder="••••••" inputmode="numeric">
+            <button class="pin-toggle" onclick="togglePin('inp-pin',this)">👁</button>
+          </div>
+          <p class="pin-hint">⚠ 4–6 dígitos. Guarda-o bem — usarás para aceder ao curso.</p>
+        </div>
+        <button class="btn-confirmar" id="btn-confirmar" onclick="confirmarPagamento()">✅ Confirmar Pagamento</button>
+        <div class="ja-paguei-link" onclick="alternarModo('aceder')">Já paguei — Quero aceder ao curso ›</div>
+      </div>
+
+      <!-- MODO ACEDER -->
+      <div id="modo-aceder" style="display:none">
+        <div class="aviso-validacao" id="aviso-aceder"></div>
+        <div class="form-group"><label>Número de telefone</label><input type="tel" id="ac-tel" placeholder="87XXXXXXX"></div>
+        <div class="form-group">
+          <label>PIN de acesso</label>
+          <div class="pin-wrapper">
+            <input type="password" id="ac-pin" maxlength="6" placeholder="••••••" inputmode="numeric">
+            <button class="pin-toggle" onclick="togglePin('ac-pin',this)">👁</button>
+          </div>
+        </div>
+        <button class="btn-confirmar" onclick="verificarAcesso()">🔓 Entrar no Curso</button>
+        <div class="ja-paguei-link" onclick="alternarModo('pagar')">‹ Voltar ao pagamento</div>
+      </div>
+
+      <button class="btn-cancelar" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VÍDEO -->
+<div class="modal-overlay" id="modal-video">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div id="video-titulo" style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:12px"></div>
+    <div class="video-container" id="video-container">
+      <div class="video-placeholder"><div class="play-icon">▶️</div><p>Conteúdo em breve</p></div>
+    </div>
+    <button class="btn-cancelar" onclick="fecharModalVideo()">Fechar</button>
+  </div>
+</div>
+
+<!-- LOGIN ADMIN -->
+<div id="login-admin">
+  <div class="login-card">
+    <h3>🔐 Área Admin</h3>
+    <p>Insere a senha para aceder</p>
+    <input type="password" id="senha-admin" placeholder="••••" inputmode="numeric" onkeydown="if(event.key==='Enter')entrarAdmin()">
+    <button class="btn-login" onclick="entrarAdmin()">Entrar</button>
+    <button class="btn-cancelar-login" onclick="fecharLoginAdmin()">Cancelar</button>
+    <p id="erro-admin" style="color:#c0392b;font-size:.8rem;margin-top:8px;display:none">❌ Senha incorrecta!</p>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="saved-toast" id="toast"></div>
+
+<footer>
+  <b>CCD Serviços</b> · Aulas de Informática<br>
+  Beira, Moçambique &nbsp;·&nbsp; ☎ <span id="footer-tel">877 567 229</span>
+</footer>
+
+<script>
+// ===== SENHA ADMIN — altera aqui =====
+const SENHA_ADMIN = '1986';
+
+// ===== CURSOS =====
+let cursos = [
+  { id:'windows', nome:'Windows', emoji:'🖥️', thumbClass:'windows', desc:'Sistema operativo, ficheiros e configurações', preco:2500, nivel:'Básico',
+    topicos:['Interface do Windows','Gestão de ficheiros e pastas','Configurações do sistema','Atalhos de teclado','Segurança e antivírus'] },
+  { id:'word', nome:'Microsoft Word', emoji:'📝', thumbClass:'word', desc:'Criação e formatação de documentos', preco:2500, nivel:'Básico',
+    topicos:['Formatação de texto','Tabelas e imagens','Cabeçalho e rodapé','Impressão e PDF','Modelos profissionais'] },
+  { id:'excel', nome:'Microsoft Excel', emoji:'📊', thumbClass:'excel', desc:'Planilhas, fórmulas e análise de dados', preco:3000, nivel:'Básico a Médio',
+    topicos:['Fórmulas: SE, SOMA, MÉDIA','PROCV / VLOOKUP','Formatação condicional','Gráficos e tabelas dinâmicas','Referências absolutas'] },
+  { id:'powerpoint', nome:'PowerPoint', emoji:'📽️', thumbClass:'ppt', desc:'Apresentações profissionais e impactantes', preco:2500, nivel:'Básico',
+    topicos:['Criação de slides','Animações e transições','Imagens e vídeos','Temas e design','Técnicas de apresentação'] }
+];
+
+// Números de pagamento (guardados no localStorage)
+function getNumeros() {
+  return JSON.parse(localStorage.getItem('ccd_numeros') || '{}');
+}
+function getNumero(metodo) {
+  const nums = getNumeros();
+  return nums[metodo] || '877 567 229';
+}
+function setNumero(metodo, val) {
+  const nums = getNumeros();
+  nums[metodo] = val;
+  localStorage.setItem('ccd_numeros', JSON.stringify(nums));
+}
+
+// Video URLs por curso
+function getVideos() {
+  return JSON.parse(localStorage.getItem('ccd_videos') || '{}');
+}
+function setVideo(id, url) {
+  const v = getVideos();
+  v[id] = url;
+  localStorage.setItem('ccd_videos', JSON.stringify(v));
+}
+
+// Preços editados
+function getPrecos() {
+  return JSON.parse(localStorage.getItem('ccd_precos') || '{}');
+}
+function setPreco(id, preco) {
+  const p = getPrecos();
+  p[id] = preco;
+  localStorage.setItem('ccd_precos', JSON.stringify(p));
+}
+
+// Aplicar preços guardados
+function aplicarPrecosSalvos() {
+  const p = getPrecos();
+  cursos.forEach(c => { if (p[c.id]) c.preco = parseInt(p[c.id]); });
+}
+
+// ===== RENDER CURSOS =====
+function renderCursos() {
+  aplicarPrecosSalvos();
+  const grid = document.getElementById('cursos-grid');
+  grid.innerHTML = cursos.map(c => `
+    <div class="curso-card" onclick="abrirPreview('${c.id}')">
+      <div class="curso-thumb ${c.thumbClass}">
+        <span>${c.emoji}</span>
+        <span class="preco-badge">${c.preco.toLocaleString('pt')} MT</span>
+        <span class="locked-badge">🔒 Pago</span>
+      </div>
+      <div class="curso-info">
+        <div class="curso-nome">${c.nome}</div>
+        <div class="curso-desc">${c.desc}</div>
+        <button class="btn-aceder bloqueado">🎓 Inscrever-me</button>
+      </div>
+    </div>`).join('');
+}
+
+// ===== MODAL PREVIEW =====
+let cursoActivo = null;
+
+function abrirPreview(id) {
+  aplicarPrecosSalvos();
+  cursoActivo = cursos.find(c => c.id === id);
+  if (!cursoActivo) return;
+  document.getElementById('preview-emoji').textContent = cursoActivo.emoji;
+  document.getElementById('preview-titulo').textContent = cursoActivo.nome;
+  document.getElementById('preview-subtitulo').textContent = 'Nível: ' + cursoActivo.nivel;
+  document.getElementById('preco-display').textContent = cursoActivo.preco.toLocaleString('pt') + ' MT';
+  document.getElementById('topicos-lista').innerHTML =
+    cursoActivo.topicos.slice(0,3).map(t => `<div class="topico-item"><span>✅</span> ${t}</div>`).join('');
+  // Actualizar números
+  document.getElementById('num-emola-display').textContent = getNumero('emola');
+  document.getElementById('num-mpesa-display').textContent = getNumero('mpesa');
+  document.getElementById('num-mkesh-display').textContent = getNumero('mkesh');
+  // Reset
+  ['success-msg','pendente-msg'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('modal-conteudo').style.display = 'block';
+  document.getElementById('aviso-pagar').classList.remove('visivel');
+  document.getElementById('aviso-aceder').classList.remove('visivel');
+  ['inp-nome','inp-tel','inp-ref','inp-pin','ac-tel','ac-pin'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  alternarModo('pagar');
+  document.getElementById('modal-preview').classList.add('active');
+}
+
+function fecharModal() {
+  document.getElementById('modal-preview').classList.remove('active');
+  cursoActivo = null;
+}
+
+function alternarModo(modo) {
+  document.getElementById('modo-pagar').style.display = modo==='pagar'?'block':'none';
+  document.getElementById('modo-aceder').style.display = modo==='aceder'?'block':'none';
+}
+
+function togglePin(inputId, btn) {
+  const el = document.getElementById(inputId);
+  el.type = el.type==='password'?'text':'password';
+  btn.textContent = el.type==='password'?'👁':'🙈';
+}
+
+// ===== GUARDAR LOCALMENTE =====
+function salvarLocal(pag) {
+  const lista = JSON.parse(localStorage.getItem('ccd_pagamentos')||'[]');
+  // Evitar duplicados pela referência
+  const existe = lista.find(p=>p.referencia===pag.referencia && p.telefone===pag.telefone);
+  if (!existe) { lista.push(pag); localStorage.setItem('ccd_pagamentos', JSON.stringify(lista)); }
+}
+function getLocais() {
+  return JSON.parse(localStorage.getItem('ccd_pagamentos')||'[]');
+}
+function atualizarStatusLocal(id, status) {
+  const lista = getLocais();
+  const idx = lista.findIndex(p=>p.id===id);
+  if (idx!==-1) { lista[idx].status=status; localStorage.setItem('ccd_pagamentos',JSON.stringify(lista)); }
+}
+
+// ===== CONFIRMAR PAGAMENTO =====
+async function confirmarPagamento() {
+  const nome = document.getElementById('inp-nome').value.trim();
+  const tel  = document.getElementById('inp-tel').value.trim();
+  const ref  = document.getElementById('inp-ref').value.trim();
+  const pin  = document.getElementById('inp-pin').value.trim();
+  const av   = document.getElementById('aviso-pagar');
+  if (!nome||!tel||!ref||pin.length<4) {
+    av.textContent='⚠ Preenche todos os campos. PIN mínimo 4 dígitos.';
+    av.classList.add('visivel'); return;
+  }
+  av.classList.remove('visivel');
+  const btn = document.getElementById('btn-confirmar');
+  btn.textContent='⏳ A enviar...'; btn.disabled=true;
+
+  const pag = {
+    id: 'local_'+Date.now(),
+    nome, telefone:tel,
+    curso_id:cursoActivo.id, curso_nome:cursoActivo.nome,
+    preco:cursoActivo.preco, referencia:ref, pin,
+    status:'pendente', timestamp:new Date().toISOString()
+  };
+
+  // 1. Guardar SEMPRE no dispositivo (nunca falha)
+  salvarLocal(pag);
+
+  // 2. Tentar Firebase (pode falhar silenciosamente)
+  try {
+    if (window._dbPronto) {
+      const {collection,addDoc}=window._firebase;
+      const docRef = await addDoc(collection(window._db,'pagamentos'),pag);
+      // Actualizar id local com o id Firebase
+      const lista = getLocais();
+      const idx = lista.findIndex(p=>p.referencia===ref && p.telefone===tel);
+      if (idx!==-1) { lista[idx].firebaseId=docRef.id; localStorage.setItem('ccd_pagamentos',JSON.stringify(lista)); }
+    }
+  } catch(e) {
+    console.warn('Firebase indisponível, guardado localmente:', e.message);
+  }
+
+  // 3. Mostrar sucesso SEMPRE
+  btn.textContent='✅ Confirmar Pagamento'; btn.disabled=false;
+  document.getElementById('modal-conteudo').style.display='none';
+  document.getElementById('pendente-msg').classList.add('active');
+  document.getElementById('pendente-txt').textContent=
+    '✅ Pedido enviado com sucesso! Quando aprovado, usa o número '+tel+' e o teu PIN para aceder.';
+}
+
+// ===== VERIFICAR ACESSO =====
+async function verificarAcesso() {
+  const tel = document.getElementById('ac-tel').value.trim();
+  const pin = document.getElementById('ac-pin').value.trim();
+  const av  = document.getElementById('aviso-aceder');
+  if (!tel||!pin) { av.textContent='⚠ Preenche número e PIN.'; av.classList.add('visivel'); return; }
+  if (!cursoActivo) return;
+
+  // 1. Verificar no localStorage primeiro
+  const locais = getLocais();
+  const acesso = locais.find(p=>
+    p.telefone===tel && p.curso_id===cursoActivo.id &&
+    p.pin===pin && p.status==='aprovado'
+  );
+  if (acesso) { concederAcesso(); return; }
+
+  // 2. Verificar no Firebase
+  try {
+    if (window._dbPronto) {
+      const {collection,getDocs,query,where}=window._firebase;
+      const q=query(collection(window._db,'pagamentos'),
+        where('telefone','==',tel),where('curso_id','==',cursoActivo.id),
+        where('pin','==',pin),where('status','==','aprovado'));
+      const snap=await getDocs(q);
+      if (!snap.empty) { concederAcesso(); return; }
+    }
+  } catch(e) {}
+
+  av.textContent='❌ Dados incorrectos ou pagamento ainda não aprovado.';
+  av.classList.add('visivel');
+}
+
+function concederAcesso() {
+  document.getElementById('modal-conteudo').style.display='none';
+  document.getElementById('success-msg').classList.add('active');
+  document.getElementById('success-txt').textContent='🎉 Acesso concedido! Bem-vindo ao curso de '+cursoActivo.nome+'.';
+  setTimeout(()=>{ fecharModal(); abrirVideo(cursoActivo); },1800);
+}
+
+// ===== VÍDEO =====
+function abrirVideo(curso) {
+  document.getElementById('video-titulo').textContent=curso.emoji+' '+curso.nome;
+  const videos=getVideos();
+  const url=videos[curso.id]||'';
+  const c=document.getElementById('video-container');
+  c.innerHTML=url
+    ?`<iframe src="${url}" allowfullscreen></iframe>`
+    :`<div class="video-placeholder"><div class="play-icon">▶️</div><p>Vídeo em breve</p></div>`;
+  document.getElementById('modal-video').classList.add('active');
+}
+function fecharModalVideo(){
+  document.getElementById('modal-video').classList.remove('active');
+  document.getElementById('video-container').innerHTML='';
+}
+
+// ===== ADMIN =====
+function abrirLoginAdmin(){
+  document.getElementById('login-admin').classList.add('active');
+  document.getElementById('senha-admin').value='';
+  document.getElementById('erro-admin').style.display='none';
+  setTimeout(()=>document.getElementById('senha-admin').focus(),300);
+}
+function fecharLoginAdmin(){ document.getElementById('login-admin').classList.remove('active'); }
+
+function entrarAdmin(){
+  if(document.getElementById('senha-admin').value===SENHA_ADMIN){
+    fecharLoginAdmin();
+    document.getElementById('view-cliente').style.display='none';
+    document.getElementById('view-admin').classList.add('active');
+    const btn=document.getElementById('btn-admin-toggle');
+    btn.textContent='← Sair'; btn.onclick=sairAdmin;
+    renderAdminPanel();
+  } else {
+    document.getElementById('erro-admin').style.display='block';
+  }
+}
+
+function sairAdmin(){
+  document.getElementById('view-admin').classList.remove('active');
+  document.getElementById('view-cliente').style.display='block';
+  const btn=document.getElementById('btn-admin-toggle');
+  btn.textContent='⚙ Admin'; btn.onclick=abrirLoginAdmin;
+}
+
+// ===== PAINEL ADMIN — renderiza IMEDIATAMENTE =====
+function renderAdminPanel() {
+  const panel = document.getElementById('admin-panel');
+  panel.innerHTML = `
+    <div class="admin-header">
+      <div class="admin-avatar">👨‍💼</div>
+      <div class="admin-info">
+        <div class="nome">Conde Damas</div>
+        <div class="cargo">Administrador · CCD Serviços</div>
+      </div>
+    </div>
+
+    <div class="admin-stats" id="admin-stats">
+      <div class="admin-stat-card"><div class="admin-stat-num" id="s-aprovados">…</div><div class="admin-stat-label">Alunos Activos</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" id="s-pendentes">…</div><div class="admin-stat-label">Pendentes</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" id="s-total">…</div><div class="admin-stat-label">Total Pedidos</div></div>
+      <div class="admin-stat-card"><div class="admin-stat-num" id="s-receita">…</div><div class="admin-stat-label">Receita (MT)</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="mudarTab('pendentes',this)">⏳ Pendentes</button>
+      <button class="tab" onclick="mudarTab('historico',this)">📋 Histórico</button>
+      <button class="tab" onclick="mudarTab('cursos',this)">📚 Cursos</button>
+      <button class="tab" onclick="mudarTab('config',this)">⚙ Config</button>
+    </div>
+
+    <!-- TAB PENDENTES -->
+    <div id="tab-pendentes" class="tab-content active">
+      <div class="admin-card">
+        <div id="lista-pendentes" class="loading-admin">⏳ A carregar pagamentos...</div>
+      </div>
+    </div>
+
+    <!-- TAB HISTÓRICO -->
+    <div id="tab-historico" class="tab-content">
+      <div class="admin-card">
+        <div id="lista-historico" class="loading-admin">⏳ A carregar histórico...</div>
+      </div>
+    </div>
+
+    <!-- TAB CURSOS -->
+    <div id="tab-cursos" class="tab-content">
+      <div class="admin-card">
+        ${renderCursosAdmin()}
+      </div>
+    </div>
+
+    <!-- TAB CONFIG -->
+    <div id="tab-config" class="tab-content">
+      <div class="admin-card">
+        <p class="admin-section-title">📞 Números de Pagamento</p>
+        ${['emola','mpesa','mkesh'].map(m=>`
+          <div class="config-row">
+            <span class="config-label">${m==='emola'?'E-Mola':m==='mpesa'?'M-Pesa':'Mkesh'}</span>
+            <div class="config-input-row">
+              <input class="config-input" id="cfg-${m}" type="tel" value="${getNumero(m)}" placeholder="87XXXXXXX">
+              <button class="btn-salvar-config" onclick="salvarNumero('${m}')">Salvar</button>
+            </div>
+          </div>`).join('')}
+      </div>
+      <div class="admin-card">
+        <p class="admin-section-title">🔐 Alterar Senha Admin</p>
+        <div class="config-row">
+          <span class="config-label">Nova senha</span>
+          <div class="config-input-row">
+            <input class="config-input" id="cfg-senha" type="password" placeholder="Nova senha">
+            <button class="btn-salvar-config" onclick="alterarSenha()">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  // Carregar dados Firebase em paralelo
+  carregarPagamentosAdmin();
+}
+
+function renderCursosAdmin() {
+  const videos = getVideos();
+  const precos = getPrecos();
+  const cores = {windows:'#0078d4',ppt:'#d24726',word:'#2b579a',excel:'#217346'};
+  return cursos.map(c=>`
+    <div class="curso-admin-item">
+      <div class="curso-admin-top">
+        <div class="curso-admin-left">
+          <div class="curso-admin-icon" style="background:${cores[c.thumbClass]||'#888'};color:#fff">${c.emoji}</div>
+          <div>
+            <div class="curso-admin-nome">${c.nome}</div>
+            <div class="curso-admin-preco">${(precos[c.id]||c.preco).toLocaleString('pt')} MT</div>
+          </div>
+        </div>
+        <button class="btn-admin btn-editar" onclick="toggleEditCurso('${c.id}')">✏ Editar</button>
+      </div>
+      <div class="curso-edit-area" id="edit-${c.id}">
+        <label style="font-size:.75rem;font-weight:700;color:var(--cinza);display:block;margin-bottom:4px">PREÇO (MT)</label>
+        <div class="edit-row">
+          <input class="edit-input" id="edit-preco-${c.id}" type="number" value="${precos[c.id]||c.preco}" placeholder="Preço em MT">
+          <button class="btn-salvar-edit" onclick="salvarPreco('${c.id}')">💾 Guardar</button>
+        </div>
+        <label style="font-size:.75rem;font-weight:700;color:var(--cinza);display:block;margin-bottom:4px">URL DO VÍDEO (YouTube embed)</label>
+        <div class="edit-row">
+          <input class="edit-input" id="edit-video-${c.id}" type="url" value="${videos[c.id]||''}" placeholder="https://www.youtube.com/embed/...">
+          <button class="btn-salvar-edit" onclick="salvarVideoURL('${c.id}')">💾 Guardar</button>
+        </div>
+        ${videos[c.id]?`<div class="video-actual">🎥 Vídeo actual: ${videos[c.id]}</div>`:''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleEditCurso(id) {
+  const el = document.getElementById('edit-'+id);
+  el.classList.toggle('aberto');
+}
+
+function salvarPreco(id) {
+  const val = parseInt(document.getElementById('edit-preco-'+id).value);
+  if (!val||val<100) { toast('❌ Preço inválido'); return; }
+  setPreco(id, val);
+  renderCursos();
+  toast('✅ Preço de '+cursos.find(c=>c.id===id).nome+' actualizado!');
+  // Fechar o editor após guardar
+  setTimeout(()=>renderAdminPanel(), 500);
+}
+
+function salvarVideoURL(id) {
+  const val = document.getElementById('edit-video-'+id).value.trim();
+  setVideo(id, val);
+  toast('✅ Vídeo de '+cursos.find(c=>c.id===id).nome+' guardado!');
+  setTimeout(()=>renderAdminPanel(), 500);
+}
+
+function salvarNumero(metodo) {
+  const val = document.getElementById('cfg-'+metodo).value.trim();
+  if (!val) { toast('❌ Número inválido'); return; }
+  setNumero(metodo, val);
+  const nomes={emola:'E-Mola',mpesa:'M-Pesa',mkesh:'Mkesh'};
+  // Actualizar footer
+  document.getElementById('footer-tel').textContent = getNumero('emola');
+  toast('✅ Número '+nomes[metodo]+' actualizado!');
+}
+
+function alterarSenha() {
+  const nova = document.getElementById('cfg-senha').value.trim();
+  if (!nova||nova.length<3) { toast('❌ Senha muito curta'); return; }
+  // Guardar no localStorage para esta sessão
+  localStorage.setItem('ccd_senha', nova);
+  toast('✅ Senha alterada! Recarrega para aplicar.');
+}
+
+function mudarTab(nome, btn) {
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+nome).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ===== CARREGAR PAGAMENTOS (Firebase + localStorage juntos) =====
+async function carregarPagamentosAdmin() {
+  // 1. Começar com dados locais (sempre disponíveis)
+  let todos = [...getLocais()];
+
+  // 2. Tentar adicionar dados do Firebase
+  try {
+    if (window._dbPronto) {
+      const {collection,getDocs}=window._firebase;
+      const snap=await getDocs(collection(window._db,'pagamentos'));
+      snap.forEach(d=>{
+        const fbPag={id:d.id,...d.data()};
+        // Não duplicar — comparar por referência+telefone
+        const jaExiste=todos.find(p=>p.referencia===fbPag.referencia && p.telefone===fbPag.telefone);
+        if (!jaExiste) todos.push(fbPag);
+        else {
+          // Actualizar status local com o do Firebase (Firebase é autoridade)
+          Object.assign(jaExiste, fbPag);
+        }
+      });
+    }
+  } catch(e) {
+    console.warn('Firebase indisponível, usando dados locais:', e.message);
+  }
+
+  const aprovados=todos.filter(p=>p.status==='aprovado');
+  const pendentes=todos.filter(p=>p.status==='pendente');
+  const receita=aprovados.reduce((s,p)=>s+(p.preco||0),0);
+
+  // Stats
+  document.getElementById('s-aprovados').textContent=aprovados.length;
+  document.getElementById('s-pendentes').textContent=pendentes.length;
+  document.getElementById('s-total').textContent=todos.length;
+  document.getElementById('s-receita').textContent=receita.toLocaleString('pt');
+
+  // Lista pendentes
+  document.getElementById('lista-pendentes').innerHTML = pendentes.length===0
+    ? '<p style="text-align:center;color:#888;padding:20px;font-size:.85rem">Nenhum pagamento pendente ✅</p>'
+    : pendentes.map(p=>`
+        <div class="pagamento-item" id="pag-${p.id}">
+          <div class="pag-info">
+            <div class="pag-nome">${p.nome}</div>
+            <div class="pag-curso">${p.curso_nome} · ☎ ${p.telefone}</div>
+            <div class="pag-ref">Ref: ${p.referencia}</div>
+          </div>
+          <div class="pag-acoes">
+            <span class="pag-status pendente">⏳ Pendente</span>
+            <button class="btn-admin btn-aprovar" onclick="aprovar('${p.id}','${p.firebaseId||''}')">✅ Aprovar</button>
+            <button class="btn-admin btn-rejeitar" onclick="rejeitar('${p.id}','${p.firebaseId||''}')">❌ Rejeitar</button>
+          </div>
+        </div>`).join('');
+
+  // Lista histórico
+  document.getElementById('lista-historico').innerHTML = todos.length===0
+    ? '<p style="text-align:center;color:#888;padding:20px;font-size:.85rem">Nenhum registo ainda</p>'
+    : todos.map(p=>`
+        <div class="pagamento-item">
+          <div class="pag-info">
+            <div class="pag-nome">${p.nome}</div>
+            <div class="pag-curso">${p.curso_nome} · ${p.telefone}</div>
+          </div>
+          <span class="pag-status ${p.status}">${p.status==='aprovado'?'✅ Aprovado':p.status==='rejeitado'?'❌ Rejeitado':'⏳ Pendente'}</span>
+        </div>`).join('');
+
+  document.getElementById('stat-alunos').textContent=aprovados.length;
+}
+
+async function aprovar(id, firebaseId) {
+  // Actualizar localStorage
+  atualizarStatusLocal(id,'aprovado');
+  const el=document.getElementById('pag-'+id);
+  if (el) { el.style.opacity='.4'; el.style.pointerEvents='none'; }
+  toast('✅ Pagamento aprovado!');
+  // Tentar Firebase também
+  try {
+    if (window._dbPronto && firebaseId) {
+      const {doc,updateDoc}=window._firebase;
+      await updateDoc(doc(window._db,'pagamentos',firebaseId),{status:'aprovado'});
+    } else if (window._dbPronto && id.startsWith('local_')===false) {
+      const {doc,updateDoc}=window._firebase;
+      await updateDoc(doc(window._db,'pagamentos',id),{status:'aprovado'});
+    }
+  } catch(e){ console.warn('Firebase update falhou, guardado localmente'); }
+  setTimeout(carregarPagamentosAdmin,800);
+}
+
+async function rejeitar(id, firebaseId) {
+  if (!confirm('Rejeitar este pagamento?')) return;
+  atualizarStatusLocal(id,'rejeitado');
+  toast('❌ Pagamento rejeitado.');
+  try {
+    if (window._dbPronto && firebaseId) {
+      const {doc,updateDoc}=window._firebase;
+      await updateDoc(doc(window._db,'pagamentos',firebaseId),{status:'rejeitado'});
+    } else if (window._dbPronto && id.startsWith('local_')===false) {
+      const {doc,updateDoc}=window._firebase;
+      await updateDoc(doc(window._db,'pagamentos',id),{status:'rejeitado'});
+    }
+  } catch(e){ console.warn('Firebase update falhou, guardado localmente'); }
+  setTimeout(carregarPagamentosAdmin,500);
+}
+
+// ===== TOAST =====
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Aplicar senha guardada
+  const s=localStorage.getItem('ccd_senha');
+  if (s) window.SENHA_ADMIN_OVERRIDE=s;
+
+  renderCursos();
+
+  setTimeout(()=>{
+    const ov=document.getElementById('welcome-overlay');
+    ov.classList.add('ocultar');
+    setTimeout(()=>ov.style.display='none',800);
+  },2500);
+
+  document.querySelectorAll('.modal-overlay').forEach(m=>{
+    m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('active'); });
+  });
+});
+
+// Contador de alunos
+document.addEventListener('firebase-pronto',async()=>{
+  try {
+    const {collection,getDocs,query,where}=window._firebase;
+    const snap=await getDocs(query(collection(window._db,'pagamentos'),where('status','==','aprovado')));
+    document.getElementById('stat-alunos').textContent=snap.size;
+  } catch(e){}
+});
+
+// Corrigir login com senha override
+function entrarAdmin(){
+  const senha=document.getElementById('senha-admin').value;
+  const senhaValida=localStorage.getItem('ccd_senha')||SENHA_ADMIN;
+  if(senha===senhaValida){
+    fecharLoginAdmin();
+    document.getElementById('view-cliente').style.display='none';
+    document.getElementById('view-admin').classList.add('active');
+    const btn=document.getElementById('btn-admin-toggle');
+    btn.textContent='← Sair'; btn.onclick=sairAdmin;
+    renderAdminPanel();
+  } else {
+    document.getElementById('erro-admin').style.display='block';
+  }
+}
+</script>
+</body>
+</html>
